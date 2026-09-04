@@ -1,5 +1,5 @@
 {
-  "name": "@cursor-skill/ownstack-mode-tools",
+  "name": "@ownstack-skill/ownstack-mode-tools",
   "private": true,
   "type": "module",
   "scripts": {

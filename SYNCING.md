@@ -15,7 +15,35 @@ would conflict almost everywhere, every time.
 So the port lives in `scripts/port.py` as a set of rules instead. Updating means
 re-running the transform, not resolving conflicts.
 
-## Updating
+## It runs itself
+
+A weekly GitHub Action (`.github/workflows/upstream-sync.yml`, Mondays 09:00 UTC)
+re-derives the port and **opens a PR** with the result. You read the diff and
+merge. Nothing to run locally.
+
+When the transform hits upstream text no rule covers, it writes nothing and
+opens an **issue** instead, because a person has to decide how the new thing
+should be ported. That is the one case that needs you.
+
+## The guard
+
+`port.py` is plain string replacement, not an AI. It only knows the patterns
+written into `SUBS`, so a new upstream phrase would otherwise slip through and
+land in this repo off-brand or unportable.
+
+To stop that, the script audits its own output. Anything still matching
+`LEAK_PATTERNS` after transformation (upstream branding, `cursor-team-kit`,
+non-Claude model slugs, `run_in_background`, `environment: "cloud"`, and so on)
+is a rule the ruleset is missing. The script prints it and **refuses to write**.
+
+It is deliberately noisy in one direction: it would rather stop and ask than
+quietly ship something wrong. When it fires, either add a rule to `SUBS`, or add
+the file to `HAND_WRITTEN` / `DROPPED` if it cannot be ported at all.
+
+This caught two real bugs in the first port: an `@cursor-skill/` npm scope and a
+`control-cli` / `control-ui` reference that had shipped unnoticed.
+
+## Updating by hand
 
 ```bash
 # 1. get the current upstream

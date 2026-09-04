@@ -1,0 +1,136 @@
+name: upstream sync
+
+# Weekly: re-derive the port from upstream pstack and open a PR with the result.
+#
+# port.py refuses to write when it finds upstream text no rule covers (a new
+# Cursor built-in, a new model slug, unfamiliar branding). In that case this
+# job opens an issue instead of a PR, because a human has to decide how the
+# new thing should be ported.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"        # Mondays, 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch upstream pstack
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse \
+            https://github.com/cursor/plugins.git /tmp/upstream
+          cd /tmp/upstream && git sparse-checkout set pstack
+          echo "UPSTREAM_SHA=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Re-derive the port
+        id: port
+        run: |
+          set +e
+          python3 scripts/port.py --upstream /tmp/upstream/pstack > /tmp/report.txt 2>&1
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          set -e
+          cat /tmp/report.txt
+          {
+            echo 'report<<REPORT_EOF'
+            cat /tmp/report.txt
+            echo 'REPORT_EOF'
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "dirty=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "dirty=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # port.py exits non-zero when it finds text no rule covers. Nothing was
+      # written, so raise it for a human instead of opening a PR.
+      - name: Report unported upstream text
+        if: steps.port.outputs.exit != '0'
+        uses: actions/github-script@v7
+        env:
+          REPORT: ${{ steps.port.outputs.report }}
+        with:
+          script: |
+            const title = 'Upstream pstack needs new port rules';
+            const body = [
+              'Upstream changed in a way `scripts/port.py` does not know how to port,',
+              'so **nothing was written**. Someone needs to decide how these should',
+              'be handled and add rules to `SUBS` in `scripts/port.py`.',
+              '',
+              '```',
+              (process.env.REPORT || '').trim(),
+              '```',
+              '',
+              'See [SYNCING.md](../blob/main/SYNCING.md).',
+            ].join('\n');
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'upstream-drift',
+            });
+            if (open.length) {
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open[0].number, title, body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['upstream-drift'],
+              });
+            }
+
+      - name: Open a sync PR
+        if: steps.port.outputs.exit == '0' && steps.port.outputs.dirty == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPORT: ${{ steps.port.outputs.report }}
+        run: |
+          BRANCH="sync/upstream-$(date +%Y-%m-%d)"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A
+
+          printf '%s\n' \
+            "Sync with upstream pstack ($UPSTREAM_SHA)" \
+            "" \
+            "Re-derived by scripts/port.py. No hand edits." \
+            "" \
+            "$REPORT" > /tmp/msg.txt
+          git commit -q -F /tmp/msg.txt
+          git push -f -q origin "$BRANCH"
+
+          BODY=$(printf '%s\n' \
+            "Re-derived from upstream [pstack](https://github.com/cursor/plugins/tree/main/pstack) at \`$UPSTREAM_SHA\` by \`scripts/port.py\`." \
+            "" \
+            '```' \
+            "$REPORT" \
+            '```' \
+            "" \
+            "**Before merging**, check any file listed as \`A\` (new upstream file):" \
+            "the transform only rewrites text it recognises, so a new skill that" \
+            "relies on a Cursor-only capability will look fine but will not work." \
+            "" \
+            "Files listed as \`!\` are hand-written and were **not** updated. If" \
+            "upstream changed them, port those changes by hand." )
+
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --body "$BODY"
+          else
+            gh pr create \
+              --base main --head "$BRANCH" \
+              --title "Sync with upstream pstack ($UPSTREAM_SHA)" \
+              --body "$BODY" \
+              --label upstream-drift
+          fi
+
+      - name: Nothing to do
+        if: steps.port.outputs.exit == '0' && steps.port.outputs.dirty == 'false'
+        run: echo "Already in sync with upstream."

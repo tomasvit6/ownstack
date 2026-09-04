@@ -78,6 +78,9 @@ SUBS = [
     (r"\bPoteto\b", "Ownstack"),
     (r"\bpoteto\b", "ownstack"),
 
+    # --- bundled tooling package name ---
+    (r"@cursor-skill/", "@ownstack-skill/"),
+
     # --- install commands ---
     (r"/add-plugin ownstack", "/plugin install ownstack@ownstack"),
 
@@ -127,6 +130,8 @@ SUBS = [
      "Drive through the `claude-in-chrome` skill or the `run` skill."),
     (r"`control-ui` or `control-cli` runtime verification \(from `cursor-team-kit`\)",
      "browser or CLI runtime verification (`claude-in-chrome`, `run`)"),
+    (r"Name the real path, such as `control-cli`, `control-ui`, or the targeted tests\.",
+     "Name the real path, such as the `run` skill, the `claude-in-chrome` skill, or the targeted tests."),
     (r"`cursor-team-kit` publishes `control-cli` \(CLIs and TUIs\) and `control-ui` \(browser / Electron / web UIs\)\.",
      "Use the `run` skill for CLIs and TUIs, and the `claude-in-chrome` skill for browser and web UIs."),
 
@@ -217,6 +222,57 @@ SUBS = [
 # so the files stay honest about what actually applies).
 DROP_FRONTMATTER_KEYS = ["mode", "icon", "color", "reminder", "paths"]
 
+# Anything matching these AFTER transformation means the ruleset missed something.
+# The script refuses to write when it sees one, so an unrecognised upstream
+# phrase fails loudly instead of landing in the repo off-brand or unportable.
+LEAK_PATTERNS = [
+    (r"(?i)\bpoteto\b", "upstream branding"),
+    (r"(?i)\bpstack\b", "upstream branding"),
+    (r"(?i)cursor-team-kit", "Cursor-only plugin"),
+    (r"(?i)\bcursor\b", "Cursor reference"),
+    (r"\.cursor\b", "Cursor path"),
+    (r"\bgeneralPurpose\b", "invalid subagent_type (must be kebab-case)"),
+    (r"\bis_background\b", "invalid agent key (use `background`)"),
+    (r'environment:\s*"(cloud|local)"', "not a Claude Code Agent parameter"),
+    (r"\brun_in_background\b", "not a Claude Code Agent parameter"),
+    (r"\bgrok-[\d.]+-\w", "non-Claude model slug"),
+    (r"\bgpt-[\d.]+-\w*(sol|max|mini|nano)", "non-Claude model slug"),
+    (r"claude-fable-5-1-thinking", "raw upstream model slug"),
+    (r"claude-opus-5-thinking", "raw upstream model slug"),
+    (r"/add-plugin", "Cursor install command"),
+    (r"/deslop", "Cursor-only skill"),
+    (r"\bcontrol-(ui|cli)\b", "Cursor-only skill"),
+]
+
+# Substrings that legitimately contain a leak pattern and are not leaks.
+LEAK_ALLOW = [
+    "upstack",          # stacked-PR jargon, unrelated to pstack
+    "cursor location",  # the text cursor, not the editor
+    "precursor",
+    # our own attribution lines name the upstream project on purpose
+    "used under the mit license",
+    "github.com/cursor/plugins",
+]
+
+
+def find_leaks(text: str, rel: str):
+    """Report upstream-specific text that survived the transform."""
+    hits = []
+    for line_no, line in enumerate(text.split("\n"), 1):
+        low = line.lower()
+        if any(a in low for a in LEAK_ALLOW):
+            # strip the allowed words, then re-test the remainder
+            probe = low
+            for a in LEAK_ALLOW:
+                probe = probe.replace(a, "")
+        else:
+            probe = line
+        for pat, why in LEAK_PATTERNS:
+            if re.search(pat, probe):
+                hits.append((line_no, why, line.strip()[:100]))
+                break
+    return hits
+
 
 def transform_text(text: str) -> str:
     for pattern, repl in SUBS:
@@ -267,7 +323,7 @@ def main() -> int:
     root = Path(__file__).resolve().parent.parent
     dest_root = root / "ownstack"
 
-    changed, added, hand, dropped = [], [], [], []
+    changed, added, hand, dropped, leaks = [], [], [], [], []
 
     for src in sorted(up.rglob("*")):
         if not src.is_file():
@@ -292,13 +348,22 @@ def main() -> int:
                 hand.append(out_rel)
             continue
 
+        audited = False
         if src.suffix.lower() in {".md", ".json", ".yaml", ".yml", ".mdc", ".txt"}:
             text = src.read_text(encoding="utf-8")
             text = transform_text(text)
             if src.name == "SKILL.md" or rel.startswith("agents/"):
                 text = strip_unsupported_frontmatter(text, out_rel)
             if out_rel == "docs/guide/README.md":
+                # audit before appending our own attribution footer, which
+                # names the upstream project deliberately
+                for line_no, why, snippet in find_leaks(text, out_rel):
+                    leaks.append(f"{out_rel}:{line_no}  [{why}]  {snippet}")
                 text = text.rstrip("\n") + "\n" + GUIDE_FOOTER
+                audited = True
+            if not audited:
+                for line_no, why, snippet in find_leaks(text, out_rel):
+                    leaks.append(f"{out_rel}:{line_no}  [{why}]  {snippet}")
             new = text.encode("utf-8")
         else:
             new = src.read_bytes()
@@ -313,6 +378,17 @@ def main() -> int:
             if not args.check:
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_bytes(new)
+
+    if leaks:
+        print("UNPORTED UPSTREAM TEXT - the ruleset does not cover these:\n")
+        for l in leaks:
+            print(f"  {l}")
+        print(f"\n{len(leaks)} leak(s). Add rules to SUBS in scripts/port.py,")
+        print("or add the file to HAND_WRITTEN / DROPPED if it cannot be ported.")
+        if not args.check:
+            print("\nRefusing to write. Nothing changed.", file=sys.stderr)
+            return 1
+        print()
 
     verb = "would change" if args.check else "changed"
     print(f"{verb}: {len(changed)}")
