@@ -15,6 +15,15 @@ Then run `/ownstack-mode` on any task that needs rigor.
 
 Full documentation, the skill catalogue, and an honest account of what changed in the port: **[`ownstack/README.md`](./ownstack/README.md)**.
 
+## Staying current
+
+Upstream pstack is actively maintained. This repo keeps up by **re-deriving** the
+port rather than merging: every rename and capability remap lives in
+`scripts/port.py`, so pulling upstream changes is one command instead of a
+conflict in 60+ files. A weekly GitHub Action opens an issue when upstream moves.
+
+See [SYNCING.md](./SYNCING.md).
+
 ## Attribution
 
 All credit for the skills, playbooks, and principles goes to [Lauren Tan](https://github.com/poteto). This repository's contribution is the Claude Code port. If you use Cursor, use [pstack](https://github.com/cursor/plugins/tree/main/pstack) directly.
