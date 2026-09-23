@@ -17,7 +17,7 @@ ownstack is that plugin ported: same skills, same playbooks, same thesis, rewrit
 
 Two steps:
 
-1. Run `/setup-ownstack` and pick which models each role uses. Optional; the defaults work.
+1. Run `/setup-ownstack`, pick a reasoning budget, and pick which models each role uses. Optional; the defaults work.
 2. Run `/ownstack-mode` whenever you are doing something that needs rigor.
 
 ```
@@ -33,7 +33,7 @@ New here? The [guide](./docs/guide/README.md) walks through a first real task, f
 
 The entry point is `/ownstack-mode`. It reads your request, picks a playbook, and runs the other skills as the steps need them. Everything else is situational.
 
-Underneath sit 24 `principle-*` skills, one idea each, that the mode navigates into when a decision calls for it: fix root causes, make illegal states unrepresentable, subtract before you add, prove it works. They are the substance of the plugin, and they are what makes the output different from an agent that just writes code quickly.
+Underneath sit 23 `principle-*` skills, one idea each, that the mode navigates into when a decision calls for it: fix root causes, make illegal states unrepresentable, subtract before you add, prove it works. They are the substance of the plugin, and they are what makes the output different from an agent that just writes code quickly.
 
 ### Core
 
@@ -75,7 +75,7 @@ Underneath sit 24 `principle-*` skills, one idea each, that the mode navigates i
 
 ### Principles
 
-24 `principle-*` skills the mode navigates into as decisions come up. Read them directly if you want the thesis: `principle-fix-root-causes`, `principle-type-system-discipline`, `principle-prove-it-works`, `principle-subtract-before-you-add`, `principle-guard-the-context-window`, and 19 more in [`skills/`](./skills/).
+23 `principle-*` skills the mode navigates into as decisions come up. Read them directly if you want the thesis: `principle-fix-root-causes`, `principle-type-system-discipline`, `principle-prove-it-works`, `principle-subtract-before-you-add`, `principle-guard-the-context-window`, and 19 more in [`skills/`](./skills/).
 
 ## Agents
 
@@ -96,7 +96,7 @@ Honest accounting of what is different from upstream pstack.
 
 **Real differences**
 
-- **Model panels are Claude-only now.** Upstream races Fable, GPT, Grok, and Opus against each other and leans on cross-vendor disagreement. Claude Code's Agent tool dispatches Claude models only, so panels became `fable` / `opus` / `sonnet` / `haiku` at differing effort levels. Each panel runs one entry per model family rather than repeating `opus` at different efforts, since the signal is cross-model agreement. The fan-out-and-cross-judge structure is intact; the diversity is intra-Claude and weaker for it. This is the one place the port loses something real.
+- **Model panels are Claude-only now.** Upstream races Opus, GPT, and Grok against each other and leans on cross-vendor disagreement. Claude Code's Agent tool dispatches Claude models only, so each vendor maps to a Claude family by tier: upstream's top judgment model to `fable`, GPT to `opus`, and the fast Grok code model to `sonnet`. Panels keep one entry per family, since the signal is cross-model agreement. The fan-out-and-cross-judge structure is intact; the diversity is intra-Claude and weaker for it. This is the one place the port loses something real.
 - **`environment: "cloud"` and `run_in_background` are not Claude Code Agent parameters.** Cloud-agent fan-out became concurrent in-message subagents, with `isolation: "worktree"` where upstream relied on separate VMs to keep writers off each other.
 - **`typescript-best-practices` no longer auto-activates.** Upstream used `paths: ["**/*.ts"]` to load it on TypeScript files. Claude Code has no path-triggered skill activation, so it is manual: `/typescript-best-practices`.
 - **`/setup-ownstack` writes a plain config file**, not a Cursor always-applied rule. Claude Code does not auto-load arbitrary files, so the skill offers to add one referencing line to your `~/.claude/CLAUDE.md`.
@@ -105,12 +105,16 @@ Honest accounting of what is different from upstream pstack.
 
 **How invocation works here**
 
-43 of the 44 skills keep `disable-model-invocation: true` from upstream. In Claude Code that means their descriptions stay out of the model's context, so they never fire on an unrelated prompt. Both intended paths still work, and both were verified against a real install:
+45 of the 46 skills keep `disable-model-invocation: true` from upstream. In Claude Code that means their descriptions stay out of the model's context, so they never fire on an unrelated prompt. Both intended paths still work, and both were verified against a real install:
 
 - You type `/ownstack:unslop` (or any skill name) and it loads in full.
 - `/ownstack-mode` routes into them by file path, the way upstream designed it, so the playbooks and principle skills load without needing the Skill tool.
 
 The tradeoff is that the model will not reach for these skills on its own. That is the intended behavior for a plugin this opinionated.
+
+## Upgrading
+
+A `~/.claude/ownstack-models.md` written before the three-model panels pins the old defaults: four-entry panels with `haiku`, and a `how critics` line the `how` skill no longer reads. Delete those role lines, or delete the file, then run `/setup-ownstack` again. A rerun keeps any role whose value differs from the default.
 
 ## Attribution
 

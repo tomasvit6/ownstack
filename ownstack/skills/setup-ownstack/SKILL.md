@@ -1,6 +1,6 @@
 ---
 name: setup-ownstack
-description: Configure which models and effort levels ownstack uses per role. Detects what this session can dispatch and writes an override file the skills read. Use for /setup-ownstack, "configure ownstack models", or changing ownstack's model choices.
+description: Configure which models and effort levels ownstack uses per role, and at what reasoning budget. Detects what this session can dispatch and writes an override file the skills read. Use for /setup-ownstack, "configure ownstack models", "ownstack budget", or changing ownstack's model choices.
 ---
 
 # Setup ownstack
@@ -17,13 +17,22 @@ Confirm which models this account can actually dispatch before writing them. If 
 
 ### 2. Load current state
 
-The default role mapping is the shape in step 5. If `~/.claude/ownstack-models.md` exists, read it and treat its values as current. Otherwise start from the defaults.
+The default role mapping is the shape in step 5. If `~/.claude/ownstack-models.md` exists, read it and treat its `# budget` line and its role values as current. Otherwise start from the defaults.
 
-### 3. Map and confirm
+### 3. Budget, map, and confirm
 
-Show every role with its current value, marking anything unavailable as needing a choice. Ask whether to accept as-is or change specific roles. Prefer AskUserQuestion over free text.
+**(a) Ask for a budget.** Prefer AskUserQuestion over free text. Offer these four options with these exact labels, and name the current budget when the file records one.
 
-For panel roles (how critics, arena runners, architect runners, interrogate reviewers) the value is a list, and one subagent runs per entry, so the list length sets the panel size. `arena cross-judge pool` is also a list, but Arena picks one entry whose model or effort differs from the parent's when possible.
+- `unlimited — keep max`
+- `large — xhigh effort`
+- `medium — high effort`
+- `small — medium effort`
+
+**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by model, list, or `inherit`. `unlimited` leaves every effort as in that table. `large`, `medium`, and `small` set the effort of every `model:effort` value, panel entries included, to `xhigh`, `high`, or `medium`, but never raise one: the ladder is `max` > `xhigh` > `high` > `medium` > `low`, and a value already at or below the target keeps its effort. `inherit` does not change. So `small` turns `fable:max` into `fable:medium` and `sonnet:high` into `sonnet:medium`.
+
+**(c) Show the roles and confirm.** Show every role with its value, marking any model this session cannot dispatch as needing a choice. Ask whether to accept as-is or change specific roles. Prefer AskUserQuestion over free text.
+
+For panel roles (arena runners, architect runners, interrogate reviewers) the value is a list, and one subagent runs per entry, so the list length sets the panel size. Keep one entry per model family: a panel's signal is cross-model disagreement, and a second entry on the same model at another effort adds little. `arena cross-judge pool` is also a list, but Arena picks one entry whose model family differs from the parent's when possible.
 
 `swarm workers` is the default for every worker unless a race assigns another value per arm.
 
@@ -33,32 +42,32 @@ Every model written must be one this session can dispatch; `inherit` always pass
 
 ### 5. Write the config
 
-Write `~/.claude/ownstack-models.md`. Overwrite the whole file so re-runs stay idempotent. Shape:
+Write `~/.claude/ownstack-models.md` with a `# budget` line naming the chosen label and its target effort. Overwrite the whole file so re-runs stay idempotent. Shape:
 
 ```
 # ownstack model configuration
 # One line per role, as `model:effort`. Delete a line to fall back to the skill default.
 # `inherit` as a value: the role runs on the parent session's model.
 # Models: opus, sonnet, haiku, fable, inherit. Effort: low, medium, high, xhigh, max.
+# budget: unlimited (max)
 
 feature, refactoring: sonnet:high
-bug-fix: opus:max
-perf-issue: opus:max
-hillclimb: opus:max
-judgment and prose: opus:max
-hardest tasks: opus:max
+bug-fix: sonnet:high
+perf-issue: sonnet:high
+hillclimb: sonnet:high
+judgment and prose: fable:max
+hardest tasks: fable:max
 how explorer: sonnet:high
-how explainer: opus:max
-how critics: fable:max, opus:max, sonnet:high, haiku:medium
+how explainer: fable:max
 why investigators: sonnet:high
-why synthesizer: opus:max
-reflect tooling: opus:high
-reflect judgment, divergent, synthesizer: opus:max
-arena runners: fable:max, opus:max, sonnet:high, haiku:medium
-arena cross-judge pool: fable:max, opus:max, sonnet:high, haiku:medium
+why synthesizer: fable:max
+reflect tooling: opus:max
+reflect judgment, divergent, synthesizer: fable:max
+arena runners: fable:max, opus:max, sonnet:high
+arena cross-judge pool: fable:max, opus:max, sonnet:high
 swarm workers: sonnet:high
-architect runners: fable:max, opus:max, sonnet:high, haiku:medium
-interrogate reviewers: fable:max, opus:max, sonnet:high, haiku:medium
+architect runners: fable:max, opus:max, sonnet:high
+interrogate reviewers: fable:max, opus:max, sonnet:high
 ```
 
 ### 6. Offer to load it automatically
