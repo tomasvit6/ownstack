@@ -126,6 +126,10 @@ SUBS = [
      "the `run` skill for CLIs or the `claude-in-chrome` skill for web UIs, as the change demands"),
     (r"Browser, Electron, and web UIs use `control-ui` from `cursor-team-kit`\. CLIs and TUIs use `control-cli` from `cursor-team-kit`\.",
      "Browser and web UIs use the `claude-in-chrome` skill. CLIs and TUIs use the `run` skill."),
+    (r"with the matching control skill, such as `control-cli` or `control-ui` from `cursor-team-kit`, or a named driver where none exists",
+     "with the matching skill, such as `run` for CLIs or `claude-in-chrome` for web UIs, or a named driver where none exists"),
+    (r"each a Cursor cloud agent, each exercising the real surface with the matching control skill \(such as `control-ui` or `control-cli` from `cursor-team-kit`\)",
+     'each in its own worktree (`isolation: "worktree"`), each exercising the real surface with the matching skill (such as `claude-in-chrome` for web UIs or `run` for CLIs)'),
     (r"Drive through `control-ui` or `control-cli` from `cursor-team-kit`\.",
      "Drive through the `claude-in-chrome` skill or the `run` skill."),
     (r"`control-ui` or `control-cli` runtime verification \(from `cursor-team-kit`\)",
@@ -177,7 +181,7 @@ SUBS = [
     (r"point cursor at", "point Claude Code at"),
 
     # --- Cursor-only local paths ---
-    (r"`~/Library/Application Support/Cursor` \(`state\.vscdb\.backup`, and `snapshots/roots/<root>` where a `<root>` named for a folder you opened as a workspace balloons\); ", ""),
+    (r"`~/Library/Application Support/Cursor` \(`state\.vscdb\.backup`, and `snapshots/roots/<root>` where a `<root>` named for a folder you opened as a workspace balloons\)[;,] ", ""),
     (r"If Cursor also exposes a models API or CLI that lists the user's entitled models, prefer it for completeness\. ", ""),
 
     # --- names that must be kebab-case in Claude Code ---
@@ -199,30 +203,28 @@ SUBS = [
     (r"After setup, start a new chat\. The model rule applies to new sessions\.",
      "After setup, start a new session so the config is in context."),
 
-    # --- model panels: cross-vendor -> one entry per Claude family ---
-    # Panels exist for cross-model disagreement, so each upstream vendor maps
-    # to a distinct Claude family rather than `opus` at another effort.
-    (r"`claude-fable-5-1-thinking-max`, `gpt-5\.6-sol-max`, `grok-4\.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`",
-     "`fable` at `max` effort, `opus` at `max` effort, `sonnet` at `high` effort, and `haiku` at `medium` effort"),
-    (r"claude-fable-5-1-thinking-max, gpt-5\.6-sol-max, grok-4\.6-fast-xhigh, claude-opus-5-thinking-xhigh",
-     "fable:max, opus:max, sonnet:high, haiku:medium"),
-    (r"`claude-fable-5-1-thinking-max`", "`fable` at `max` effort"),
-    (r"`grok-4\.6-fast-xhigh`", "`haiku` at `medium` effort"),
-    (r"`gpt-5\.6-sol-max`", "`sonnet` at `high` effort"),
-    (r"`claude-opus-5-thinking-xhigh`", "`opus` at `max` effort"),
-    (r"claude-fable-5-1-thinking-max", "fable:max"),
-    (r"grok-4\.6-fast-xhigh", "haiku:medium"),
-    (r"gpt-5\.6-sol-max", "sonnet:high"),
-    (r"claude-opus-5-thinking-xhigh", "opus:max"),
-    (r"Run a unit's verifier on a different model family from its worker\.",
-     "Run a unit's verifier on a different model or effort level from its worker."),
-    (r"whose model family differs from the parent's when possible",
-     "whose model or effort level differs from the parent's when possible"),
+    # --- models: cross-vendor -> Claude families, by tier ---
+    # Upstream's top judgment model maps to fable, its second vendor to opus,
+    # and its fast code model to sonnet. Panels keep one entry per family, since
+    # their signal is cross-model disagreement.
+    (r"`claude-opus-5-5-max`, `gpt-5\.6-sol-max`, `grok-4\.7-xhigh-fast`",
+     "`fable` at `max` effort, `opus` at `max` effort, and `sonnet` at `high` effort"),
+    (r"claude-opus-5-5-max, gpt-5\.6-sol-max, grok-4\.7-xhigh-fast",
+     "fable:max, opus:max, sonnet:high"),
+    (r"`claude-opus-5-5-max`", "`fable` at `max` effort"),
+    (r"`gpt-5\.6-sol-max`", "`opus` at `max` effort"),
+    (r"`grok-4\.7-xhigh-fast`", "`sonnet` at `high` effort"),
+    (r"claude-opus-5-5-max", "fable:max"),
+    (r"gpt-5\.6-sol-max", "opus:max"),
+    (r"grok-4\.7-xhigh-fast", "sonnet:high"),
 ]
 
 # Frontmatter keys Claude Code does not support (silently ignored, but removed
 # so the files stay honest about what actually applies).
 DROP_FRONTMATTER_KEYS = ["mode", "icon", "color", "reminder", "paths"]
+
+# Code files that get the text rules too. Kept narrow: SUBS is written for prose.
+SCRIPT_SUFFIXES = {".mjs"}
 
 # Anything matching these AFTER transformation means the ruleset missed something.
 # The script refuses to write when it sees one, so an unrecognised upstream
@@ -239,8 +241,7 @@ LEAK_PATTERNS = [
     (r"\brun_in_background\b", "not a Claude Code Agent parameter"),
     (r"\bgrok-[\d.]+-\w", "non-Claude model slug"),
     (r"\bgpt-[\d.]+-\w*(sol|max|mini|nano)", "non-Claude model slug"),
-    (r"claude-fable-5-1-thinking", "raw upstream model slug"),
-    (r"claude-opus-5-thinking", "raw upstream model slug"),
+    (r"\bclaude-(fable|opus|sonnet|haiku)-[\d-]+-(max|xhigh|high|medium|low|thinking)", "raw upstream model slug"),
     (r"/add-plugin", "Cursor install command"),
     (r"/deslop", "Cursor-only skill"),
     (r"\bcontrol-(ui|cli)\b", "Cursor-only skill"),
@@ -351,7 +352,16 @@ def main() -> int:
             continue
 
         audited = False
-        if src.suffix.lower() in {".md", ".json", ".yaml", ".yml", ".mdc", ".txt"}:
+        if src.suffix.lower() in SCRIPT_SUFFIXES:
+            # scripts quote playbook text verbatim (check-plan.mjs asserts the
+            # "Ten lanes on <model>" line), so they need the same model rules.
+            # `cursor` is a normal identifier in code, so skip that one check.
+            text = transform_text(src.read_text(encoding="utf-8"))
+            for line_no, why, snippet in find_leaks(text, out_rel):
+                if why != "Cursor reference":
+                    leaks.append(f"{out_rel}:{line_no}  [{why}]  {snippet}")
+            new = text.encode("utf-8")
+        elif src.suffix.lower() in {".md", ".json", ".yaml", ".yml", ".mdc", ".txt"}:
             text = src.read_text(encoding="utf-8")
             text = transform_text(text)
             if src.name == "SKILL.md" or rel.startswith("agents/"):
