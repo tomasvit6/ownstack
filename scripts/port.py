@@ -217,6 +217,46 @@ SUBS = [
     (r"claude-opus-5-5-max", "fable:max"),
     (r"gpt-5\.6-sol-max", "opus:max"),
     (r"grok-4\.7-xhigh-fast", "sonnet:high"),
+
+    # --- transcripts: Cursor's agent-transcripts/ -> Claude Code's project dir ---
+    # Claude Code keeps a session at ~/.claude/projects/<slug>/<session-id>.jsonl
+    # and its subagents at <session-id>/subagents/*.jsonl. The system prompt does
+    # not name the directory, so the rules spell out the slug.
+    (r"Transcripts live at `~/\.claude/projects/<slug>/agent-transcripts/<uuid>/<uuid>\.jsonl`, where `<slug>` is the workspace path with the leading slash dropped and each \"/\" turned into \"-\" \(so `/Users/you/proj` becomes `Users-you-proj`\)\. Every line is one chat message\.",
+     "Transcripts live at `~/.claude/projects/<slug>/<session-id>.jsonl`, where `<slug>` is the workspace path with every non-alphanumeric character turned into \"-\" (so `/Users/you/proj` becomes `-Users-you-proj`). Subagent chats sit under `<session-id>/subagents/`. Every line is one event, and chat messages are the `\"type\":\"user\"` and `\"type\":\"assistant\"` lines."),
+    (r"The parent finds its own transcript file before fanning out\. The system prompt names the active workspace's `agent-transcripts/` directory\. Use that path\.",
+     "The parent finds its own transcript file before fanning out. It is `~/.claude/projects/<slug>/$CLAUDE_CODE_SESSION_ID.jsonl`, where `<slug>` is the directory the session started in with every non-alphanumeric character turned into `-`. Use that directory."),
+    (r"ls -t <agent-transcripts>/\*\.jsonl <agent-transcripts>/\*/\*\.jsonl <agent-transcripts>/\*/subagents/\*\.jsonl 2>/dev/null \| head -10",
+     "ls -t ~/.claude/projects/<slug>/$CLAUDE_CODE_SESSION_ID.jsonl ~/.claude/projects/<slug>/*.jsonl 2>/dev/null | head -10"),
+    (r"Three transcript layouts: legacy flat \(`<id>\.jsonl`\), current nested \(`<id>/<id>\.jsonl`\), and subagent \(`<parent>/subagents/<child>\.jsonl`\)\.",
+     "Two transcript layouts: session (`<id>.jsonl`) and subagent (`<id>/subagents/<child>.jsonl`)."),
+    (r"For each candidate, read the first JSONL line and check that `message\.content\[0\]\.text` contains the conversation's opening user prompt\. Take the matching path\.",
+     "Take `$CLAUDE_CODE_SESSION_ID.jsonl` when that variable is set. Otherwise, for each candidate, find the first `\"type\":\"user\"` line and check that its `message.content` holds the conversation's opening user prompt. Take the matching path."),
+    (r"The system prompt names the workspace's `agent-transcripts/` directory\. Use only that path\.",
+     "They live in `~/.claude/projects/<slug>/`, where `<slug>` is the directory the session started in with every non-alphanumeric character turned into `-`. Use only that directory."),
+    (r"Read this run's transcript under the active workspace's `agent-transcripts/` directory \(the system prompt names the path\)\.",
+     "Read this run's transcript, `~/.claude/projects/<slug>/$CLAUDE_CODE_SESSION_ID.jsonl` (`<slug>` is the directory the session started in with every non-alphanumeric character turned into `-`)."),
+    (r"under the active workspace's `agent-transcripts/` directory \(the system prompt names this path\)",
+     "in this project's transcript directory, `~/.claude/projects/<slug>/` (`<slug>` is the directory the session started in with every non-alphanumeric character turned into `-`)"),
+    (r"under the active workspace's `agent-transcripts/` directory \(the system prompt names the path\. ",
+     "in this project's transcript directory, `~/.claude/projects/<slug>/` (`<slug>` is the directory the session started in with every non-alphanumeric character turned into `-`. "),
+    (r"Reading local transcripts under `agent-transcripts/`\.", "Reading local transcripts under `~/.claude/projects/`."),
+
+    # worktree-audit.sh: Claude Code names a project dir after the whole path,
+    # and a worktree session gets its own dir (<repo-slug>--claude-worktrees-*),
+    # so search the repo's dir and every dir that extends it.
+    (r"# Transcripts dir: ~/\.claude/projects/<slugified-repo-path>/agent-transcripts\.",
+     "# Transcript dirs: ~/.claude/projects/<slug>*, the repo's own and its worktrees'."),
+    (r"slug=\$\(printf '%s' \"\$main_wt\" \| sed 's#\^/##; s#/#-#g'\)",
+     "slug=$(printf '%s' \"$main_wt\" | sed 's#[^A-Za-z0-9]#-#g')"),
+    (r"transcripts=\"\$HOME/\.claude/projects/\$slug/agent-transcripts\"",
+     "transcripts=(\"$HOME/.claude/projects/$slug\"*)"),
+    (r"if \[ -d \"\$transcripts\" \]; then", "if [ -d \"${transcripts[0]}\" ]; then"),
+    # ripgrep is not guaranteed on PATH (Claude Code bundles its own, visible
+    # only inside its shell), so search with grep, which matches the same
+    # fixed strings.
+    (r"rg -l -e \"\$\{wt\}/\" -e \"\$\{wt\}\\\"\" \"\$transcripts\" 2>/dev/null",
+     "grep -rlF --include='*.jsonl' -e \"${wt}/\" -e \"${wt}\\\"\" \"${transcripts[@]}\" 2>/dev/null"),
 ]
 
 # Frontmatter keys Claude Code does not support (silently ignored, but removed
@@ -224,7 +264,7 @@ SUBS = [
 DROP_FRONTMATTER_KEYS = ["mode", "icon", "color", "reminder", "paths"]
 
 # Code files that get the text rules too. Kept narrow: SUBS is written for prose.
-SCRIPT_SUFFIXES = {".mjs"}
+SCRIPT_SUFFIXES = {".mjs", ".sh"}
 
 # Anything matching these AFTER transformation means the ruleset missed something.
 # The script refuses to write when it sees one, so an unrecognised upstream
@@ -242,6 +282,7 @@ LEAK_PATTERNS = [
     (r"\bgrok-[\d.]+-\w", "non-Claude model slug"),
     (r"\bgpt-[\d.]+-\w*(sol|max|mini|nano)", "non-Claude model slug"),
     (r"\bclaude-(fable|opus|sonnet|haiku)-[\d-]+-(max|xhigh|high|medium|low|thinking)", "raw upstream model slug"),
+    (r"agent-transcripts", "Cursor transcript layout"),
     (r"/add-plugin", "Cursor install command"),
     (r"/deslop", "Cursor-only skill"),
     (r"\bcontrol-(ui|cli)\b", "Cursor-only skill"),
