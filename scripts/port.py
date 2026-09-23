@@ -199,19 +199,21 @@ SUBS = [
     (r"After setup, start a new chat\. The model rule applies to new sessions\.",
      "After setup, start a new session so the config is in context."),
 
-    # --- model panels: cross-vendor -> Claude tiers at differing effort ---
+    # --- model panels: cross-vendor -> one entry per Claude family ---
+    # Panels exist for cross-model disagreement, so each upstream vendor maps
+    # to a distinct Claude family rather than `opus` at another effort.
     (r"`claude-fable-5-1-thinking-max`, `gpt-5\.6-sol-max`, `grok-4\.6-fast-xhigh`, `claude-opus-5-thinking-xhigh`",
-     "`opus` at `max` effort, `opus` at `high` effort, `sonnet` at `high` effort, and `haiku` at `medium` effort"),
+     "`fable` at `max` effort, `opus` at `max` effort, `sonnet` at `high` effort, and `haiku` at `medium` effort"),
     (r"claude-fable-5-1-thinking-max, gpt-5\.6-sol-max, grok-4\.6-fast-xhigh, claude-opus-5-thinking-xhigh",
-     "opus:max, opus:high, sonnet:high, haiku:medium"),
-    (r"`claude-fable-5-1-thinking-max`", "`opus` at `max` effort"),
-    (r"`grok-4\.6-fast-xhigh`", "`sonnet` at `high` effort"),
-    (r"`gpt-5\.6-sol-max`", "`opus` at `high` effort"),
-    (r"`claude-opus-5-thinking-xhigh`", "`opus` at `xhigh` effort"),
-    (r"claude-fable-5-1-thinking-max", "opus:max"),
-    (r"grok-4\.6-fast-xhigh", "sonnet:high"),
-    (r"gpt-5\.6-sol-max", "opus:high"),
-    (r"claude-opus-5-thinking-xhigh", "opus:xhigh"),
+     "fable:max, opus:max, sonnet:high, haiku:medium"),
+    (r"`claude-fable-5-1-thinking-max`", "`fable` at `max` effort"),
+    (r"`grok-4\.6-fast-xhigh`", "`haiku` at `medium` effort"),
+    (r"`gpt-5\.6-sol-max`", "`sonnet` at `high` effort"),
+    (r"`claude-opus-5-thinking-xhigh`", "`opus` at `max` effort"),
+    (r"claude-fable-5-1-thinking-max", "fable:max"),
+    (r"grok-4\.6-fast-xhigh", "haiku:medium"),
+    (r"gpt-5\.6-sol-max", "sonnet:high"),
+    (r"claude-opus-5-thinking-xhigh", "opus:max"),
     (r"Run a unit's verifier on a different model family from its worker\.",
      "Run a unit's verifier on a different model or effort level from its worker."),
     (r"whose model family differs from the parent's when possible",

@@ -96,7 +96,7 @@ Honest accounting of what is different from upstream pstack.
 
 **Real differences**
 
-- **Model panels are Claude-only now.** Upstream races Fable, GPT, Grok, and Opus against each other and leans on cross-vendor disagreement. Claude Code's Agent tool dispatches Claude models only, so panels became `opus` / `sonnet` / `haiku` at differing effort levels. The fan-out-and-cross-judge structure is intact; the diversity is intra-Claude and weaker for it. This is the one place the port loses something real.
+- **Model panels are Claude-only now.** Upstream races Fable, GPT, Grok, and Opus against each other and leans on cross-vendor disagreement. Claude Code's Agent tool dispatches Claude models only, so panels became `fable` / `opus` / `sonnet` / `haiku` at differing effort levels. Each panel runs one entry per model family rather than repeating `opus` at different efforts, since the signal is cross-model agreement. The fan-out-and-cross-judge structure is intact; the diversity is intra-Claude and weaker for it. This is the one place the port loses something real.
 - **`environment: "cloud"` and `run_in_background` are not Claude Code Agent parameters.** Cloud-agent fan-out became concurrent in-message subagents, with `isolation: "worktree"` where upstream relied on separate VMs to keep writers off each other.
 - **`typescript-best-practices` no longer auto-activates.** Upstream used `paths: ["**/*.ts"]` to load it on TypeScript files. Claude Code has no path-triggered skill activation, so it is manual: `/typescript-best-practices`.
 - **`/setup-ownstack` writes a plain config file**, not a Cursor always-applied rule. Claude Code does not auto-load arbitrary files, so the skill offers to add one referencing line to your `~/.claude/CLAUDE.md`.

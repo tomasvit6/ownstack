@@ -110,7 +110,7 @@ Run the full explain flow above (Steps 1-4). You must understand the architectur
 
 ### Step 2. Spawn Critics
 
-After the explanation is complete, spawn one architectural critic per model in your configured how-critics list (defaults `opus` at `max` effort, `opus` at `high` effort, `sonnet` at `high` effort, and `haiku` at `medium` effort), all in a single message.
+After the explanation is complete, spawn one architectural critic per model in your configured how-critics list (defaults `fable` at `max` effort, `opus` at `max` effort, `sonnet` at `high` effort, and `haiku` at `medium` effort), all in a single message.
 
 For each critic:
 - `subagent_type`: `general-purpose`

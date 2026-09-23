@@ -49,16 +49,16 @@ judgment and prose: opus:max
 hardest tasks: opus:max
 how explorer: sonnet:high
 how explainer: opus:max
-how critics: opus:max, opus:high, sonnet:high, haiku:medium
+how critics: fable:max, opus:max, sonnet:high, haiku:medium
 why investigators: sonnet:high
 why synthesizer: opus:max
 reflect tooling: opus:high
 reflect judgment, divergent, synthesizer: opus:max
-arena runners: opus:max, opus:high, sonnet:high, haiku:medium
-arena cross-judge pool: opus:max, opus:high, sonnet:high, haiku:medium
+arena runners: fable:max, opus:max, sonnet:high, haiku:medium
+arena cross-judge pool: fable:max, opus:max, sonnet:high, haiku:medium
 swarm workers: sonnet:high
-architect runners: opus:max, opus:high, sonnet:high, haiku:medium
-interrogate reviewers: opus:max, opus:high, sonnet:high, haiku:medium
+architect runners: fable:max, opus:max, sonnet:high, haiku:medium
+interrogate reviewers: fable:max, opus:max, sonnet:high, haiku:medium
 ```
 
 ### 6. Offer to load it automatically

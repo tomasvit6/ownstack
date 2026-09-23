@@ -37,10 +37,10 @@ Launch all reviewers in a single message using the Task tool. Use the `interroga
 
 | Subagent | Default model |
 |----------|---------------|
-| Reviewer A | `opus` at `max` effort |
-| Reviewer B | `opus` at `high` effort |
+| Reviewer A | `fable` at `max` effort |
+| Reviewer B | `opus` at `max` effort |
 | Reviewer C | `sonnet` at `high` effort |
-| Reviewer D | `opus` at `xhigh` effort |
+| Reviewer D | `haiku` at `medium` effort |
 
 For each reviewer:
 - `subagent_type`: `general-purpose`
