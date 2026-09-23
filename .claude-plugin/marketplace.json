@@ -10,7 +10,7 @@
       "name": "ownstack",
       "source": "./ownstack",
       "description": "Rigorous agent workflows: principle skills, review panels, and verification playbooks.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "license": "MIT",
       "category": "developer-tools"
     }

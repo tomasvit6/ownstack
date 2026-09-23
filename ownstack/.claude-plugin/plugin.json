@@ -1,7 +1,7 @@
 {
   "name": "ownstack",
   "displayName": "ownstack",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "If you want to go fast, go deep first. Rigorous agent workflows for Claude Code: principle skills, review panels, and verification playbooks that help you write less but higher-quality code.",
   "author": {
     "name": "Tomas Vitkauskas"
