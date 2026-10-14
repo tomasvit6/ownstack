@@ -24,7 +24,7 @@ Infer the need from the message and the conversation. A named situation, such as
 
 Check the state that changes the answer, and mention it only when it does:
 
-- No `~/.claude/ownstack-models.md` means `/setup-ownstack` hasn't run for this user, so every role uses its default model.
+- No `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md` means `/setup-ownstack` hasn't run for this user, so every role uses its default model.
 - No `verify-*` skill or other app harness in the project means agents have no scripted way to drive the app. Mention `/create-verification-skill` when the question is about proving a change works.
 
 When the model config is missing and it matters, ask whether the user wants to pick a model for each role and a reasoning budget now. It matters when the user is new, the question is about setup or cost, or the answer depends on which models run. Ask at most once per chat. If the need is also unclear, ask both questions together. Offer two choices:
@@ -35,7 +35,7 @@ When the model config is missing and it matters, ask whether the user wants to p
 ## Get set up
 
 1. Install with `/plugin marketplace add tomasvit6/ownstack`, then `/plugin install ownstack@ownstack`.
-2. Run [`/setup-ownstack`](../setup-ownstack/SKILL.md). It asks for a reasoning budget, maps a model to each role, and writes `~/.claude/ownstack-models.md`. Start a new session so the config is in context.
+2. Run [`/setup-ownstack`](../setup-ownstack/SKILL.md). It asks for a reasoning budget, maps a model to each role, and writes `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md`. Start a new session so the config is in context.
 3. Start a real task with `/ownstack-mode`, a goal, and a check that can pass or fail.
 
 Installing changes nothing until the user invokes a skill. Only `/setup-ownstack` loads from the user's words. The [README](../../README.md) and [guide page 1](../../docs/guide/01-setup.md) have the details. Offer to word their first prompt with them, per [`references/prompting.md`](references/prompting.md).

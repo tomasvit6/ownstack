@@ -5,7 +5,7 @@ description: Configure which models and effort levels ownstack uses per role, an
 
 # Setup ownstack
 
-Write `~/.claude/ownstack-models.md`, a config file that sets ownstack's model and effort per role. Skills read it and fall back to their inline defaults when a line is absent, so this is an override layer, not a requirement. Running ownstack without it works fine.
+Write `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md`, a config file that sets ownstack's model and effort per role. Skills read it and fall back to their inline defaults when a line is absent, so this is an override layer, not a requirement. The path is per profile: `$CLAUDE_CONFIG_DIR` when it is set, so separate Claude Code profiles keep separate choices, and `~/.claude` otherwise. Resolve it with `echo "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"` before reading or writing. Running ownstack without it works fine.
 
 ## Steps
 
@@ -17,7 +17,7 @@ Confirm which models this account can actually dispatch before writing them. If 
 
 ### 2. Load current state
 
-The default role mapping is the shape in step 5. If `~/.claude/ownstack-models.md` exists, read it and treat its `# budget` line and its role values as current. Otherwise start from the defaults.
+The default role mapping is the shape in step 5. If `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md` exists, read it and treat its `# budget` line and its role values as current. Otherwise start from the defaults.
 
 ### 3. Budget, map, and confirm
 
@@ -42,7 +42,7 @@ Every model written must be one this session can dispatch; `inherit` always pass
 
 ### 5. Write the config
 
-Write `~/.claude/ownstack-models.md` with a `# budget` line naming the chosen label and its target effort. Overwrite the whole file so re-runs stay idempotent. Shape:
+Write `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md` with a `# budget` line naming the chosen label and its target effort. Overwrite the whole file so re-runs stay idempotent. Shape:
 
 ```
 # ownstack model configuration
@@ -72,13 +72,13 @@ interrogate reviewers: opus:xhigh, sonnet:high
 
 ### 6. Offer to load it automatically
 
-Claude Code does not auto-load arbitrary files. For the config to reach every session, one line must reference it from a `CLAUDE.md`. Offer to append this to `~/.claude/CLAUDE.md`:
+Claude Code does not auto-load arbitrary files. For the config to reach every session, one line must reference it from a `CLAUDE.md`. Offer to append this to `${CLAUDE_CONFIG_DIR:-~/.claude}/CLAUDE.md`:
 
 ```
-When running ownstack skills, read `~/.claude/ownstack-models.md` for per-role model choices.
+When running ownstack skills, read `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md` for per-role model choices.
 ```
 
-On yes, append it if that exact line is not already present. On no, tell the user the config still applies whenever they mention it, and move on.
+On yes, append it if that exact line is not already present. If that file or `~/.claude/CLAUDE.md` has an older line pointing at `~/.claude/ownstack-models.md`, replace it with this one, since the old path is shared by every profile. On no, tell the user the config still applies whenever they mention it, and move on.
 
 ### 7. Confirm
 
