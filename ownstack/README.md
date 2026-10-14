@@ -114,7 +114,7 @@ The tradeoff is that the model will not reach for these skills on its own. That 
 
 ## Upgrading
 
-A `~/.claude/ownstack-models.md` written before the three-model panels pins the old defaults: four-entry panels with `haiku`, and a `how critics` line the `how` skill no longer reads. Delete those role lines, or delete the file, then run `/setup-ownstack` again. A rerun keeps any role whose value differs from the default.
+A `${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md` written before the three-model panels pins the old defaults: four-entry panels with `haiku`, and a `how critics` line the `how` skill no longer reads. Delete those role lines, or delete the file, then run `/setup-ownstack` again. A rerun keeps any role whose value differs from the default.
 
 ## Attribution
 

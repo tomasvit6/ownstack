@@ -54,11 +54,15 @@ PATH_RENAMES = [
 
 EFFORTS = ["max", "xhigh", "high", "medium", "low"]
 
+# Per-profile, so `CLAUDE_CONFIG_DIR=~/.claude_work claude` and a second
+# profile each keep their own model choices.
+CONFIG = "${CLAUDE_CONFIG_DIR:-~/.claude}/ownstack-models.md"
+
 # Ordered text substitutions. Order matters: longer/more specific first.
 SUBS = [
     # --- config paths ---
-    (r"~/\.cursor/rules/pstack-models\.mdc", "~/.claude/ownstack-models.md"),
-    (r"\.cursor/rules/pstack-models\.mdc", ".claude/ownstack-models.md"),
+    (r"~/\.cursor/rules/pstack-models\.mdc", CONFIG),
+    (r"\.cursor/rules/pstack-models\.mdc", CONFIG),
     (r"~/\.cursor/", "~/.claude/"),
     (r"\.cursor/skills/", ".claude/skills/"),
     (r"\.cursor/automations/", ".claude/automations/"),
@@ -207,7 +211,7 @@ SUBS = [
     (r"^/plugin install ownstack@ownstack$",
      "/plugin marketplace add tomasvit6/ownstack\n/plugin install ownstack@ownstack"),
     (r"It writes `~/\.claude/ownstack-models\.md`, a small rule every ownstack skill reads\.",
-     "It writes `~/.claude/ownstack-models.md`, a small config file the ownstack skills read."),
+     f"It writes `{CONFIG}`, a small config file the ownstack skills read. Each Claude Code profile (`CLAUDE_CONFIG_DIR`) keeps its own."),
     (r"Set a role to `inherit-parent` or `auto` and ownstack omits the subagent `model` field, so the subagent inherits your parent chat model\. Both values mean the same thing, and neither is a model slug\.",
      "Set a role to `inherit` and ownstack omits the subagent `model` field, so the subagent runs on your parent session's model."),
     (r"After setup, start a new chat\. The model rule applies to new sessions\.",
@@ -286,7 +290,7 @@ SUBS = [
     (r"reasoning level and fast or standard speed", "effort"),
 
     # --- model config wording ---
-    (r"in the `ownstack-models\.mdc` rule", "in `~/.claude/ownstack-models.md`"),
+    (r"in the `ownstack-models\.mdc` rule", f"in `{CONFIG}`"),
     (r"in the `/setup-ownstack` rule", "in the `/setup-ownstack` config"),
     (r"If the rule or that line is missing", "If the file or that line is missing"),
     (r"if the rule or the line is missing", "if the file or the line is missing"),
