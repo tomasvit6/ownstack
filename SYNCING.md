@@ -78,7 +78,7 @@ hand-written, NOT touched (3) - re-review if upstream moved:
 
 ## What the script will not touch
 
-Three files were written from scratch for this port and are never overwritten.
+Four files were written from scratch for this port and are never overwritten.
 The script lists them on every run so you can check them by hand when upstream
 moves:
 
@@ -87,6 +87,7 @@ moves:
 | `README.md` | Describes the port itself, not pstack |
 | `LICENSE` | Carries the dual copyright notice MIT requires |
 | `skills/setup-ownstack/SKILL.md` | Rewritten for Claude Code config; upstream writes a Cursor `.mdc` rule |
+| `skills/ownstack-help/SKILL.md` | Upstream's help is built around Cursor Custom Modes and install flow |
 
 `skills/make-bot-ui` is dropped on purpose: it depends on Cursor's
 `update_state` routines API, which has no Claude Code equivalent.

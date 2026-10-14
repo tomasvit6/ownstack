@@ -21,14 +21,14 @@ The default role mapping is the shape in step 5. If `~/.claude/ownstack-models.m
 
 ### 3. Budget, map, and confirm
 
-**(a) Ask for a budget.** Prefer AskUserQuestion over free text. Offer these four options with these exact labels, and name the current budget when the file records one.
+**(a) Ask for a budget.** Prefer AskUserQuestion over free text. Offer these four options with these exact labels, and name the current budget when the file records one. With no file, say that `large` matches the skill defaults. If the user is on a Claude subscription plan (Pro or Max) rather than paying per token, recommend `medium`: review panels run several subagents at once, and all of them count against the plan's usage limit.
 
-- `unlimited — keep max`
+- `unlimited — max effort`
 - `large — xhigh effort`
 - `medium — high effort`
 - `small — medium effort`
 
-**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by model, list, or `inherit`. `unlimited` leaves every effort as in that table. `large`, `medium`, and `small` set the effort of every `model:effort` value, panel entries included, to `xhigh`, `high`, or `medium`, but never raise one: the ladder is `max` > `xhigh` > `high` > `medium` > `low`, and a value already at or below the target keeps its effort. `inherit` does not change. So `small` turns `fable:max` into `fable:medium` and `sonnet:high` into `sonnet:medium`.
+**(b) Apply it.** Build the working table from the defaults, and on a re-run keep any role you changed by model, list, or `inherit`. The defaults are the `large` budget. `unlimited` raises every `opus` and `fable` entry to `max` and every `sonnet` and `haiku` entry to `xhigh`, so the fast tier stays a step below. `medium` and `small` set the effort of every `model:effort` value, panel entries included, to `high` or `medium`, but never raise one: the ladder is `max` > `xhigh` > `high` > `medium` > `low`, and a value already at or below the target keeps its effort. `inherit` does not change. So `small` turns `opus:xhigh` into `opus:medium` and `sonnet:high` into `sonnet:medium`.
 
 **(c) Show the roles and confirm.** Show every role with its value, marking any model this session cannot dispatch as needing a choice. Ask whether to accept as-is or change specific roles. Prefer AskUserQuestion over free text.
 
@@ -49,25 +49,25 @@ Write `~/.claude/ownstack-models.md` with a `# budget` line naming the chosen la
 # One line per role, as `model:effort`. Delete a line to fall back to the skill default.
 # `inherit` as a value: the role runs on the parent session's model.
 # Models: opus, sonnet, haiku, fable, inherit. Effort: low, medium, high, xhigh, max.
-# budget: unlimited (max)
+# budget: large (xhigh)
 
 feature, refactoring: sonnet:high
 bug-fix: sonnet:high
 perf-issue: sonnet:high
 hillclimb: sonnet:high
-judgment and prose: fable:max
-hardest tasks: fable:max
+judgment and prose: opus:xhigh
+hardest tasks: opus:xhigh
 how explorer: sonnet:high
-how explainer: fable:max
+how explainer: opus:xhigh
 why investigators: sonnet:high
-why synthesizer: fable:max
-reflect tooling: opus:max
-reflect judgment, divergent, synthesizer: fable:max
-arena runners: fable:max, opus:max, sonnet:high
-arena cross-judge pool: fable:max, opus:max, sonnet:high
+why synthesizer: opus:xhigh
+reflect tooling: sonnet:high
+reflect judgment, divergent, synthesizer: opus:xhigh
+arena runners: opus:xhigh, sonnet:high
+arena cross-judge pool: opus:xhigh, sonnet:high
 swarm workers: sonnet:high
-architect runners: fable:max, opus:max, sonnet:high
-interrogate reviewers: fable:max, opus:max, sonnet:high
+architect runners: opus:xhigh, sonnet:high
+interrogate reviewers: opus:xhigh, sonnet:high
 ```
 
 ### 6. Offer to load it automatically

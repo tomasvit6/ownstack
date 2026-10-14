@@ -79,12 +79,25 @@ jobs:
                 owner: context.repo.owner, repo: context.repo.repo,
                 issue_number: open[0].number, title, body,
               });
+              // An edit notifies nobody; a comment does.
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open[0].number,
+                body: `Still out of sync with upstream \`${process.env.UPSTREAM_SHA}\`. Report above is updated.`,
+              });
             } else {
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
                 title, body, labels: ['upstream-drift'],
               });
             }
+
+      # Fail the run so drift shows as a red X and GitHub emails about it.
+      - name: Fail on unported upstream text
+        if: steps.port.outputs.exit != '0'
+        run: |
+          echo "::error::Upstream pstack has text port.py cannot port. See the upstream-drift issue."
+          exit 1
 
       - name: Open a sync PR
         if: steps.port.outputs.exit == '0' && steps.port.outputs.dirty == 'true'
